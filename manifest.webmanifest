@@ -1,0 +1,20 @@
+{
+  "id": "/tecla-teclado/",
+  "name": "Tecla — música começa aqui",
+  "short_name": "Tecla",
+  "description": "Aprenda teclado com aulas guiadas, prática interativa e progresso no seu ritmo.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/tecla-teclado/",
+  "scope": "/tecla-teclado/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f7f7f4",
+  "theme_color": "#386a57",
+  "categories": ["education", "music"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
+
