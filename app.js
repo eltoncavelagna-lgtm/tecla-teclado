@@ -90,7 +90,7 @@ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',(
 document.querySelectorAll('[data-action="lesson"]').forEach(b=>b.onclick=()=>openLesson('middle-c'));
 document.querySelectorAll('[data-action="challenge"]').forEach(b=>b.onclick=()=>{openLesson('middle-c');challengeActive=true;setLessonStep(2);message.textContent='Desafio: toque em qualquer tecla Dó.'});
 document.querySelectorAll('[data-action="practiceGoal"]').forEach(b=>b.onclick=()=>{demoToken++;demoRunning=false;goalActive=true;activeMelody=null;renderMelodies();document.getElementById('melodyTitle').textContent='Pronta para tocar?';renderMelodyNotes();goalHits=0;document.getElementById('goalCount').textContent='0 de 3';document.getElementById('goalBar').style.width='0%';toast('Toque em uma tecla Dó no teclado para começar!')});
-document.getElementById('closeModal').onclick=closeLesson;modal.addEventListener('click',e=>{if(e.target===modal)closeLesson()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLesson()});
+document.getElementById('closeModal').onclick=closeLesson;modal.addEventListener('click',e=>{if(e.target===modal)closeLesson()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLesson();closeInstallHelp()}});
 document.getElementById('nextStep').onclick=()=>{if(lessonStep<2){setLessonStep(lessonStep+1);narrateCurrentStep()}else if(lessonPhase==='demo')playLessonDemo();else if(lessonPhase==='complete')finishLesson()};
 document.getElementById('replayStep').onclick=()=>lessonStep===2?playLessonDemo():narrateCurrentStep();
 document.getElementById('pauseNarration').onclick=e=>{if(!('speechSynthesis'in window))return toast('A narração não está disponível neste navegador.');if(window.speechSynthesis.speaking&&!window.speechSynthesis.paused){window.speechSynthesis.pause();e.currentTarget.innerHTML='▶ <span>Continuar</span>'}else{window.speechSynthesis.resume();e.currentTarget.innerHTML='Ⅱ <span>Pausar</span>'}};
@@ -102,5 +102,43 @@ document.getElementById('startPracticeTimer').onclick=beginTimer;document.getEle
 document.getElementById('connectMidi').onclick=connectMidi;document.getElementById('connectMic').onclick=connectMicrophone;document.getElementById('replayMelodyDemo').onclick=playMelodyDemo;document.getElementById('melodyRestart').onclick=()=>{if(!activeMelody)return toast('Escolha uma melodia primeiro.');demoToken++;demoRunning=false;melodyPosition=0;renderMelodyNotes();document.getElementById('melodyFeedback').textContent='Vamos começar de novo. Toque a primeira nota: '+noteNames[activeMelody.notes[0]%12]+'.'};window.addEventListener('beforeunload',()=>{micStream?.getTracks().forEach(t=>t.stop());if(micContext)micContext.close()});
 document.getElementById('saveName').onclick=()=>{const v=document.getElementById('nameInput').value.trim();if(!v)return toast('Digite um nome para salvar.');state.name=v;document.querySelector('.user-name b').textContent=v;document.querySelector('#view-inicio h1').innerHTML=`Oi, ${escapeHTML(v)} <span class="wave">✳</span>`;saveState();renderProfile();toast('Nome atualizado!')};
 document.getElementById('resetProgress').onclick=()=>{if(confirm('Reiniciar aulas, conquistas e tempo de prática deste dispositivo?')){state={...defaultState};saveState();renderProfile();renderPath();toast('Progresso reiniciado.')}};
+let deferredInstallPrompt=null;
+const installHelpModal=document.getElementById('installHelpModal');
+function closeInstallHelp(){installHelpModal.classList.remove('open');installHelpModal.setAttribute('aria-hidden','true')}
+function showInstallHelp(){
+  const ua=navigator.userAgent||'';
+  let title='Instalar o Tecla',intro='Adicione o Tecla à tela inicial para abrir como um aplicativo.',steps=[];
+  if(/iPad|iPhone|iPod/i.test(ua)){
+    title='Adicionar à Tela de Início';intro='No iPhone ou iPad, faça a instalação pelo Safari:';
+    steps=['Abra este endereço no Safari.','Toque em Compartilhar (ícone de quadrado com uma seta para cima).','Escolha “Adicionar à Tela de Início” e confirme em “Adicionar”.'];
+  }else if(/Android/i.test(ua)){
+    title='Instalar no Android';intro='No menu do navegador do celular:';
+    steps=['Toque no menu ⋮ no alto da tela.','Escolha “Instalar app” ou “Adicionar à tela inicial”.','Confirme para adicionar o Tecla ao celular.'];
+  }else{
+    title='Instalar no computador';intro='O Tecla também pode abrir em uma janela própria:';
+    steps=['Procure o ícone de instalação na barra de endereço ou abra o menu do navegador.','Escolha “Instalar Tecla” ou “Instalar app”.','Confirme a instalação.'];
+  }
+  document.getElementById('installHelpTitle').textContent=title;
+  document.getElementById('installHelpIntro').textContent=intro;
+  document.getElementById('installSteps').innerHTML=steps.map(step=>`<li>${escapeHTML(step)}</li>`).join('');
+  installHelpModal.classList.add('open');installHelpModal.setAttribute('aria-hidden','false');
+  document.getElementById('closeInstallHelp').focus();
+}
+document.getElementById('installApp').onclick=async()=>{
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    const choice=await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt=null;
+    if(choice.outcome==='accepted')toast('Tecla instalado no seu dispositivo!');
+    return;
+  }
+  showInstallHelp();
+};
+document.getElementById('closeInstallHelp').onclick=closeInstallHelp;
+installHelpModal.addEventListener('click',e=>{if(e.target===installHelpModal)closeInstallHelp()});
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event});
+window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;toast('Tecla instalado no seu dispositivo!')});
+if(window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)document.getElementById('installApp').hidden=true;
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{}));
 renderDate();renderLessonKeyboard();renderProgress();renderMelodies();
 
